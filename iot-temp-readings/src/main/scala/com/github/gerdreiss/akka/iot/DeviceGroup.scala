@@ -2,6 +2,8 @@ package com.github.gerdreiss.akka.iot
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
 
+import scala.concurrent.duration.DurationLong
+
 
 object DeviceGroup {
   def props(groupId: String): Props = Props(new DeviceGroup(groupId))
@@ -22,6 +24,8 @@ object DeviceGroup {
 class DeviceGroup(groupId: String) extends Actor with ActorLogging {
   var deviceIdToActor = Map.empty[String, ActorRef]
   var actorToDeviceId = Map.empty[ActorRef, String]
+
+  var nextCollectionId = 0L
 
   override def preStart(): Unit = log.info("DeviceGroup {} started", groupId)
   override def postStop(): Unit = log.info("DeviceGroup {} stopped", groupId)
@@ -54,5 +58,13 @@ class DeviceGroup(groupId: String) extends Actor with ActorLogging {
       log.info("Device actor for {} has been terminated", deviceId)
       actorToDeviceId -= deviceActor
       deviceIdToActor -= deviceId
+
+    case DeviceGroup.RequestAllTemperatures(requestId) ⇒
+      context.actorOf(DeviceGroupQuery.props(
+        actorToDeviceId = actorToDeviceId,
+        requestId = requestId,
+        requester = sender(),
+        3.seconds
+      ))
   }
 }

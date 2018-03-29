@@ -6,7 +6,7 @@ import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 
 import scala.concurrent.duration.DurationLong
 
-class DeviceGroupSpec (_system: ActorSystem)
+class DeviceGroupSpec(_system: ActorSystem)
   extends TestKit(_system)
     with Matchers
     with FlatSpecLike

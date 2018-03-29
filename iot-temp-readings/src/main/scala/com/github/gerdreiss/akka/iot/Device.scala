@@ -13,7 +13,6 @@ object Device {
 }
 
 class Device(groupId: String, deviceId: String) extends Actor with ActorLogging {
-  import Device._
 
   var lastTemperatureReading: Option[Double] = None
 
@@ -30,13 +29,13 @@ class Device(groupId: String, deviceId: String) extends Actor with ActorLogging 
         grpId, dvcId, groupId, deviceId
       )
 
-    case RecordTemperature(id, value) ⇒
+    case Device.RecordTemperature(id, value) ⇒
       log.info("Recorded temperature reading {} with {}", value, id)
       lastTemperatureReading = Some(value)
-      sender() ! TemperatureRecorded(id)
+      sender() ! Device.TemperatureRecorded(id)
 
-    case ReadTemperature(id) ⇒
-      sender() ! RespondTemperature(id, lastTemperatureReading)
+    case Device.ReadTemperature(id) ⇒
+      sender() ! Device.RespondTemperature(id, lastTemperatureReading)
   }
 
 }
