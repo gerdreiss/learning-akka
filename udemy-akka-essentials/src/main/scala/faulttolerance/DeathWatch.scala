@@ -12,11 +12,11 @@ object DeathWatch extends App {
   class Watcher extends Actor with ActorLogging {
     override def receive: Receive = {
       case StartChild(name) =>
-        val child = system.actorOf(Props[Child], name)
+        val child = context.actorOf(Props[Child], name)
         log.info(s"Started watching $name")
         context watch child
       case Terminated(actor) =>
-        log.info(s"The reference that I'm watching: $actor")
+        log.info(s"The reference that I'm watching is terminated: $actor")
     }
   }
 
