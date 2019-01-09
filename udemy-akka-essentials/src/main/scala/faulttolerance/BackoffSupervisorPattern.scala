@@ -17,17 +17,9 @@ object BackoffSupervisorPattern extends App {
   class FilebasedPersistentActor extends Actor with ActorLogging {
     var dataSource: Source = _
 
-    override def preStart(): Unit = {
-      log.info("Persistent actor starting...")
-    }
-
-    override def postStop(): Unit = {
-      log.warning("Persistent actor stopped")
-    }
-
-    override def preRestart(reason: Throwable, message: Option[Any]): Unit = {
-      log.warning("Persistent actor restarting...")
-    }
+    override def preStart(): Unit = log.info("Persistent actor starting...")
+    override def postStop(): Unit = log.warning("Persistent actor stopped")
+    override def preRestart(reason: Throwable, message: Option[Any]): Unit = log.warning("Persistent actor restarting...")
 
     override def receive: Receive = {
       case ReadFile =>
@@ -72,4 +64,23 @@ object BackoffSupervisorPattern extends App {
 
   val stopSupervisor = system.actorOf(stopSupervisorProps, "stopSupervisor")
   stopSupervisor ! ReadFile
+
+  class EagerFBPActor extends FilebasedPersistentActor {
+    override def preStart(): Unit = {
+      log.info("Actor starting...")
+      dataSource = Source.fromFile(new File("src/main/resources/testfiles/important_data.txt"))
+    }
+  }
+
+  //val eagerActor = system.actorOf(Props[EagerFBPActor], "eagerActor")
+  val repeatedSupervisorPros = BackoffSupervisor.props(
+    Backoff.onStop(
+      Props[EagerFBPActor],
+      "eagerActor",
+      1 second,
+      30 seconds,
+      0.1
+    )
+  )
+
 }
