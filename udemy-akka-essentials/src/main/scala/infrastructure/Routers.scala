@@ -59,4 +59,18 @@ object Routers extends App {
     poolMaster2 ! s"$i Hello from the world"
   }
 
+  /**
+    * router with actors created else where
+    * GROUP router
+    */
+  val slaves = (1 to 5) map { i =>
+    system.actorOf(Props[Slave], s"slave$i")
+  }
+  val slavePaths = slaves.map(_.path.toString)
+  val groupMaster = system.actorOf(RoundRobinGroup(slavePaths).props())
+  (1 to 9) foreach { i =>
+    groupMaster ! s"$i Hello from the world"
+  }
+
+
 }
