@@ -74,8 +74,8 @@ object AskSpec {
         authDB ? Read(name) onComplete {
           case Success(None) => orgSender ! AuthenticationFailure("user not found")
           case Success(Some(pwd)) =>
-            if (pwd == pass) sender() ! AuthenticationSuccess
-            else sender() ! AuthenticationFailure("password incorrect")
+            if (pwd == pass) orgSender ! AuthenticationSuccess
+            else orgSender ! AuthenticationFailure("password incorrect")
           case Failure(_) =>
             orgSender ! AuthenticationFailure("system error")
         }
