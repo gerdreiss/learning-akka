@@ -76,9 +76,9 @@ object GraphBasics extends App {
       val merger = builder.add(Merge[Int](2))
       val balancer = builder.add(Balance[Int](2))
 
-      //fastSource ~> merger.in(0)
-      //slowSource ~> merger.in(1)
-      //merger ~> balancer
+      //fastSource      ~> merger.in(0)
+      //slowSource      ~> merger.in(1)
+      //merger          ~> balancer
       //balancer.out(0) ~> sink1
       //balancer.out(1) ~> sink2
 
