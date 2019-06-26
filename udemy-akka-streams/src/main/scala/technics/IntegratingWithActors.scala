@@ -40,7 +40,6 @@ object IntegratingWithActors extends App {
   val actorPoweredSource: Source[Int, ActorRef] = Source.actorRef[Int](bufferSize = 10, overflowStrategy = OverflowStrategy.dropHead)
   val materializedActorRef: ActorRef = actorPoweredSource.to(Sink.foreach[Int](n => println(s"Actor powered flow got number: $n"))).run()
   materializedActorRef ! 10
-
   materializedActorRef ! akka.actor.Status.Success("complete")
 
   // Actor as a destination/sink
