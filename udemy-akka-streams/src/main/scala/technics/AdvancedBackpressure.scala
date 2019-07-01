@@ -46,10 +46,10 @@ object AdvancedBackpressure extends App {
 
   val aggregateNotificationFlow = Flow[PagerEvent]
     // when source is not backpressurable
-    .conflate((event1, event2) => {
-    val nInstances = event1.nInstances + event2.nInstances
-    PagerEvent(s"Instances: $nInstances", LocalDate.now(), nInstances)
-  })
+    .conflate((event1, event2) => {repeater
+      val nInstances = event1.nInstances + event2.nInstances
+      PagerEvent(s"Instances: $nInstances", LocalDate.now(), nInstances)
+    })
     .map(event => Notification(onCallEngineer, event))
 
   //eventSource.via(aggregateNotificationFlow).async.to(Sink.foreach[Notification](slowSendEmail)).run()
