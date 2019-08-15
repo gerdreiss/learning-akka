@@ -21,6 +21,7 @@ case class CreateGuitar(guitar: Guitar)
 case class GuitarCreated(id: Int)
 case class FindGuitar(id: Int)
 case object FindAllGuitars
+case object UnknownRequest
 
 class GuitarDB extends Actor with ActorLogging {
 
@@ -41,6 +42,10 @@ class GuitarDB extends Actor with ActorLogging {
       val newGuitarId = currentGuitarId.getAndIncrement()
       guitars += newGuitarId -> guitar
       sender() ! GuitarCreated(newGuitarId)
+
+    case request =>
+      log.error(s"Unknown request: $request")
+      sender() ! UnknownRequest
   }
 }
 
