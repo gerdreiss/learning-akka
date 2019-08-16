@@ -15,17 +15,19 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-case class Guitar(make: String, model: String)
+case class Guitar(make: String, model: String, quantity: Int = 0)
 
 case class CreateGuitar(guitar: Guitar)
 case class GuitarCreated(id: Int)
 case class FindGuitar(id: Int)
+case class AddQuantity(id: Int, quantity: Int)
+
 case object FindAllGuitars
 case object UnknownRequest
 
 class GuitarDB extends Actor with ActorLogging {
 
-  val guitars: mutable.Map[Int, Guitar] = mutable.Map.empty
+  val guitars = mutable.Map.empty[Int, Guitar]
   val currentGuitarId = new AtomicInteger(0)
 
   override def receive: Receive = {
@@ -43,6 +45,12 @@ class GuitarDB extends Actor with ActorLogging {
       guitars += newGuitarId -> guitar
       sender() ! GuitarCreated(newGuitarId)
 
+    case AddQuantity(id, quantity) =>
+      log.info(s"Adding quantity $quantity to guitar with id $id")
+      val newGuitar = guitars.get(id).map(g => g.copy(quantity = g.quantity + quantity))
+      newGuitar.foreach(g => guitars.update(id, g))
+      sender() ! newGuitar
+
     case request =>
       log.error(s"Unknown request: $request")
       sender() ! UnknownRequest
@@ -50,7 +58,7 @@ class GuitarDB extends Actor with ActorLogging {
 }
 
 trait GuitarStoreJsonProtocol extends DefaultJsonProtocol {
-  implicit val guitarFormat: RootJsonFormat[Guitar] = jsonFormat2(Guitar)
+  implicit val guitarFormat: RootJsonFormat[Guitar] = jsonFormat3(Guitar)
 }
 
 object LowLevelRest extends App with GuitarStoreJsonProtocol {
@@ -68,7 +76,8 @@ object LowLevelRest extends App with GuitarStoreJsonProtocol {
   //  """
   //    |{
   //    |  "make": "Fender",
-  //    |  "model": "Stratocaster"
+  //    |  "model": "Stratocaster",
+  //    |  "quantity": 100
   //    |}
   //    |""".stripMargin
   //println(simpleGuitarJson.parseJson.convertTo[Guitar])
@@ -85,30 +94,61 @@ object LowLevelRest extends App with GuitarStoreJsonProtocol {
 
   implicit val defaultTimeout: Timeout = Timeout(2 seconds)
 
+  import StatusCodes._
+
   val requestHandler: HttpRequest => Future[HttpResponse] = {
-    case HttpRequest(HttpMethods.GET, Uri.Path("/api/guitars"), _, _, _) =>
-      val evtlGuitars = (guitarDb ? FindAllGuitars).mapTo[List[Guitar]]
-      evtlGuitars.map { guitars =>
-        HttpResponse(
-          entity = HttpEntity(
-            ContentTypes.`application/json`,
-            guitars.toJson.prettyPrint
-          )
-        )
+    case HttpRequest(HttpMethods.POST, uri@Uri.Path("/api/guitars/inventory"), _, _, _) =>
+      val query: Uri.Query = uri.query()
+      val result: Option[Future[HttpResponse]] = for {
+        id <- query.get("id").map(_.toInt)
+        q <- query.get("quantity").map(_.toInt)
+      } yield {
+        (guitarDb ? AddQuantity(id, q))
+          .mapTo[Option[Guitar]]
+          .map {
+            _.fold(HttpResponse(status = BadRequest))(_ => HttpResponse(status = OK))
+          }
       }
+      result.getOrElse(Future(HttpResponse(status = NotFound)))
+
+    case HttpRequest(HttpMethods.GET, uri@Uri.Path("/api/guitars"), _, _, _) =>
+      val query: Uri.Query = uri.query()
+
+      if (query.isEmpty)
+        (guitarDb ? FindAllGuitars).mapTo[List[Guitar]].map { guitars =>
+          HttpResponse(
+            entity = HttpEntity(
+              ContentTypes.`application/json`,
+              guitars.toJson.prettyPrint
+            )
+          )
+        }
+      else
+        query.get("id").map(_.toInt) match {
+          case None => Future(HttpResponse(status = NotFound))
+          case Some(id) => (guitarDb ? FindGuitar(id)).mapTo[Option[Guitar]].map {
+            case None => HttpResponse(status = NotFound)
+            case Some(guitar) => HttpResponse(
+              entity = HttpEntity(
+                ContentTypes.`application/json`,
+                guitar.toJson.prettyPrint
+              )
+            )
+          }
+        }
 
     case HttpRequest(HttpMethods.POST, Uri.Path("/api/guitars"), _, entity, _) =>
       val strictEntityFuture: Future[HttpEntity.Strict] = entity.toStrict(3 seconds)
       strictEntityFuture.flatMap { e =>
         val guitar = e.data.utf8String.parseJson.convertTo[Guitar]
         val guitarCreatedFuture = (guitarDb ? CreateGuitar(guitar)).mapTo[GuitarCreated]
-        guitarCreatedFuture.map(_ => HttpResponse(StatusCodes.Created))
+        guitarCreatedFuture.map(_ => HttpResponse(Created))
       }
 
     case request: HttpRequest =>
       request.discardEntityBytes()
       Future {
-        HttpResponse(status = StatusCodes.NotFound)
+        HttpResponse(status = NotFound)
       }
   }
 
