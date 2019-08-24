@@ -96,7 +96,69 @@ object DirectivesBreakdown extends App {
         )
       }
     }
+  val simpleNestedRoute =
+    path("api" / "v1") {
+      get {
+        complete(StatusCodes.OK)
+      }
+    }
+  val compactSimpleNestedRoute =
+    (path("api" / "v1") & get) {
+      complete(StatusCodes.OK)
+    }
+  val compactExtractRequestRoute =
+    (path("api" / "v1") & extractRequest & extractLog) { (req, log) =>
+      log.info(s"HTTP Request received: $req")
+      complete(StatusCodes.OK)
+    }
+  val repeatedRoute =
+    path("about") {
+      complete(StatusCodes.OK)
+    } ~
+      path("about" / "us") {
+        complete(StatusCodes.OK)
+      }
+  val dryRoute =
+    (path("about") | path("about" / "us")) {
+      complete(StatusCodes.OK)
+    }
 
-  Http().bindAndHandle(logExtractionRoute, "localhost", 8080)
+  val blogByIdRoute =
+    path(IntNumber) { postId =>
+      complete(StatusCodes.OK)
+    }
+  val blogByQueryParamRoute =
+    parameter('postId.as[Int]) { postId =>
+      complete(StatusCodes.OK)
+    }
+  val combindedBlogByIdRoute =
+    (path(IntNumber) | parameter('postId.as[Int])) { postId =>
+      complete(StatusCodes.OK)
+    }
+
+  val completeOkRoute = complete(StatusCodes.OK)
+  val failedRoute =
+    path("unsupported") {
+      failWith(new RuntimeException("Unsupported")) // => HTTP 500
+    }
+  val rejectRoute =
+    path("rejected") {
+      reject
+    } ~
+      path("index") {
+        completeOkRoute
+      }
+
+  val getOrPutPath =
+    path("api" / "v1") {
+      get {
+        completeOkRoute
+      } ~
+        post {
+          complete(StatusCodes.Created)
+        }
+    }
+
+  Http().bindAndHandle(getOrPutPath, "localhost", 8080)
 
 }
