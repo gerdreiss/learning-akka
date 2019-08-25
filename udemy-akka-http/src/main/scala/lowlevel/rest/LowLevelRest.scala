@@ -20,6 +20,8 @@ case class Guitar(make: String, model: String, quantity: Int = 0)
 case class CreateGuitar(guitar: Guitar)
 case class GuitarCreated(id: Int)
 case class FindGuitar(id: Int)
+case class FindGuitarsInStock(inStock: Boolean)
+
 case class AddQuantity(id: Int, quantity: Int)
 
 case object FindAllGuitars
@@ -50,6 +52,10 @@ class GuitarDB extends Actor with ActorLogging {
       val newGuitar = guitars.get(id).map(g => g.copy(quantity = g.quantity + quantity))
       newGuitar.foreach(g => guitars.update(id, g))
       sender() ! newGuitar
+
+    case FindGuitarsInStock(inStock) =>
+      log.info("Searching for guitars in stock...")
+      sender() ! guitars.values.filter(_.quantity > 0 == inStock).toList
 
     case request =>
       log.error(s"Unknown request: $request")
