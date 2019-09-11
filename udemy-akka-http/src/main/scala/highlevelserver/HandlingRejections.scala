@@ -51,6 +51,8 @@ object HandlingRejections extends App {
       }
     }
 
+  //Http().bindAndHandle(simpleRouteWithHandlers, "localhost", 8080)
+
   implicit val customRejectionHandler = RejectionHandler.newBuilder()
     .handle {
       case r: MethodRejection =>
@@ -65,7 +67,6 @@ object HandlingRejections extends App {
     }
     .result()
 
-  //Http().bindAndHandle(simpleRouteWithHandlers, "localhost", 8080)
 
   // sealing a route
   Http().bindAndHandle(simpleRoute, "localhost", 8080) // the implicit rejection handler is used here
