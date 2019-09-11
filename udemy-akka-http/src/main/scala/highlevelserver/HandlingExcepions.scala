@@ -6,7 +6,7 @@ import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.ExceptionHandler
 import akka.stream.ActorMaterializer
-import highlevelserver.HandlingRejections.simpleRoute
+
 
 object HandlingExcepions extends App {
 
@@ -25,6 +25,8 @@ object HandlingExcepions extends App {
         }
     }
 
+  // Any exception not handled here will be handled by the default exception handler
+  //ExceptionHandler.default()
   implicit val customExceptionHandler: ExceptionHandler = ExceptionHandler {
     case e: RuntimeException =>
       complete(NotFound, e.getMessage)
