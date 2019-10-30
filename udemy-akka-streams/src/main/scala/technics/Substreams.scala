@@ -13,7 +13,7 @@ object Substreams extends App {
   implicit val executionContext = system.dispatcher
 
   // 1 - grouping a stream
-  val wordsSource = Source(List("Akka", "Shmakka", "Xyqka", "Substreams"))
+  val wordsSource = Source(List("Akka", "Shmakka", "Xyqkka", "Substreams"))
   val groups = wordsSource.groupBy(30, _.toLowerCase.headOption.getOrElse('\0'))
 
   def teeLog[A](message: String)(a: => A) = {
