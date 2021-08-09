@@ -1,6 +1,6 @@
 package kvstore
 
-import akka.actor.{ OneForOneStrategy, PoisonPill, Props, SupervisorStrategy, Terminated, ActorRef, Actor, actorRef2Scala }
+import akka.actor.{ OneForOneStrategy, PoisonPill, Props, SupervisorStrategy, Terminated, ActorRef, Actor, Cancellable, actorRef2Scala }
 import kvstore.Arbiter.*
 import akka.pattern.{ ask, pipe }
 import scala.concurrent.duration.*
@@ -36,7 +36,10 @@ class Replica(val arbiter: ActorRef, persistenceProps: Props) extends Actor:
   var secondaries = Map.empty[ActorRef, ActorRef]
   // the current set of replicators
   var replicators = Set.empty[ActorRef]
+  // the scheduled cancellables that will be cancelled when the respective response is received.
+  var timeouts = Map.empty[Operation, Cancellable]
 
+  arbiter ! Join
 
   def receive =
     case JoinedPrimary   => context.become(leader)
@@ -44,10 +47,44 @@ class Replica(val arbiter: ActorRef, persistenceProps: Props) extends Actor:
 
   /* TODO Behavior for  the leader role. */
   val leader: Receive =
-    case _ =>
+    case op: Insert   => doInsert(op)
+    case op: Remove   => doRemove(op)
+    case op: Get      => doGet(op)
+    case op: Replicas => processNewReplicas(op)
 
   /* TODO Behavior for the replica role. */
   val replica: Receive =
-    case _ =>
+    case op: Get => doGet(op)
 
+  private def doInsert(op: Insert) =
+    kv += op.key -> op.value
+    schedule(op)
 
+  private def doRemove(op: Remove) =
+    kv -= op.key
+    schedule(op)
+
+  private def doGet(op: Get) =
+    sender ! GetResult(op.key, kv.get(op.key), op.id)
+
+  private def schedule(op: Operation) =
+    timeouts += op -> context.system.scheduler.scheduleOnce(1.second, sender, OperationFailed(op.id))
+ 
+  private def ack(op: Operation) =
+    sender ! OperationAck(op.id)
+
+  private def processNewReplicas(op: Replicas) =
+    val added = op.replicas -- secondaries.keySet - self
+    val removed = secondaries.keySet -- op.replicas
+
+    removed.foreach { r =>
+      secondaries(r) ! PoisonPill
+      secondaries -= r
+      replicators -= r
+    }
+
+    added.foreach { r =>
+      val repl = context.actorOf(Replicator.props(r))
+      replicators += repl
+      secondaries += r -> repl
+    }

@@ -37,5 +37,8 @@ class Replicator(val replica: ActorRef) extends Actor:
   
   /* TODO Behavior for the Replicator. */
   def receive: Receive =
-    case _ =>
+    case op: Replicate => doReplicate(op)
 
+  private def doReplicate(op: Replicate) =
+    // TODO`
+    Replicated(op.key, op.id)
