@@ -58,11 +58,13 @@ class Replica(val arbiter: ActorRef, persistenceProps: Props) extends Actor:
 
   private def doInsert(op: Insert) =
     kv += op.key -> op.value
-    schedule(op)
+    //schedule(op)
+    ack(op)
 
   private def doRemove(op: Remove) =
     kv -= op.key
-    schedule(op)
+    //schedule(op)
+    ack(op)
 
   private def doGet(op: Get) =
     sender ! GetResult(op.key, kv.get(op.key), op.id)
