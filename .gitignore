@@ -3,3 +3,4 @@
 .idea/
 .vscode/
 target/
+metals.sbt
