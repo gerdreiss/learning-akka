@@ -16,4 +16,4 @@ val system = ActorSystem[Nothing](
   "helloworld"
 )
 
-@main def hello: Unit = ()
+@main def main: Unit = ()
