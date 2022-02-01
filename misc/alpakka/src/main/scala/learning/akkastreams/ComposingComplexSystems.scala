@@ -37,7 +37,7 @@ object ComposingComplexSystems extends App {
       val F = builder.add(Merge[Int](2))
 
       Source.single(0) ~> B.in; B.out(0) ~> C.in(1); C.out   ~> F.in(0)
-                                                             C.in(0) <~ F.out
+                                            C.in(0)          <~ F.out
 
       B.out(1).map(_ + 1) ~> E.in; E.out(0) ~> F.in(1)
       E.out(1) ~> Sink.foreach((i: Int) => println(i))
