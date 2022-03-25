@@ -44,4 +44,19 @@ object FirstPrinciples extends App:
 
   // source -> flow -> flow -> ... -> flow -> sink
   val g = infiniteSource via mapFlow via takeFlow via Flow[Int].map(_.toString) to foreachSink
-  g.run()
+  // g.run()
+
+  /**
+   * Exercise
+   */
+
+  val names          = List("Alice", "Bob", "Charlie", "David", "Martin")
+  val nameSource     = Source(names)
+  val nameFilterFlow = Flow[String].filter(_.length > 5)
+  val nameTakeFlow   = Flow[String].take(2)
+  val nameSink       = Sink.foreach(println)
+  val nameGraph      = nameSource via nameFilterFlow via nameTakeFlow to nameSink
+  // nameGraph.run()
+
+  // or shorter version
+  nameSource.filter(_.length > 5).runForeach(println)
