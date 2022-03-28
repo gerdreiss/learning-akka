@@ -1,10 +1,10 @@
 package section02
 
+import akka.actor.Actor
 import akka.actor.ActorSystem
+import akka.actor.Props
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.*
-import akka.actor.Actor
-import akka.actor.Props
 
 object OperatorFusion extends App:
 
