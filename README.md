@@ -14,4 +14,6 @@ with
   - [Akka Streams](https://www.udemy.com/akka-streams)
 - [Coursera](https://www.coursera.org)
   - [Programming Reactive Systems](https://www.coursera.org/learn/scala-akka-reactive)
+- [Rock The JVM](https://www.youtube.com/c/RocktheJVM)
+  - [An Akka, Cats and Cassandra Project in Scala - Part 1](https://www.youtube.com/watch?v=PPIPGzrc2wo)
 
