@@ -23,7 +23,7 @@ object Bank {
     (state, command) =>
       command match {
         case createCommand: CreateBankAccount =>
-          val id = UUID.randomUUID().toString
+          val id             = UUID.randomUUID().toString
           val newBankAccount = context.spawn(PersistentBankAccount(id), id)
           Effect
             .persist(Event.BankAccountCreated(id))
@@ -32,7 +32,7 @@ object Bank {
         case updateCommand @ UpdateBalance(id, _, _, replyTo) =>
           state.accounts.get(id) match {
             case Some(bankAccount) => Effect.reply(bankAccount)(updateCommand)
-            case None              => Effect.reply(replyTo)(BankBalanceUpdatedResponse(None))
+            case None              => Effect.reply(replyTo)(BankAccountBalanceUpdatedResponse(None))
           }
 
         case getCommand @ GetBankAccount(id, replyTo) =>

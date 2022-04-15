@@ -17,7 +17,7 @@ object PersistentBankAccount {
   trait Event
   object Event {
     case class BankAccountCreated(bankAccount: BankAccount) extends Event
-    case class BalanceUpdated(amount: Double) extends Event
+    case class BalanceUpdated(amount: Double)               extends Event
   }
 
   import Command._
@@ -41,11 +41,11 @@ object PersistentBankAccount {
     case (state, UpdateBalance(_, _, amount, replyTo)) =>
       val newBalance = state.balance + amount
       if (newBalance < 0)
-        Effect.reply(replyTo)(BankBalanceUpdatedResponse(None))
+        Effect.reply(replyTo)(BankAccountBalanceUpdatedResponse(None))
       else
         Effect
           .persist(BalanceUpdated(amount))
-          .thenReply(replyTo)(newState => BankBalanceUpdatedResponse(Some(newState)))
+          .thenReply(replyTo)(newState => BankAccountBalanceUpdatedResponse(Some(newState)))
 
     case (state, GetBankAccount(_, replyTo)) =>
       Effect.reply(replyTo)(GetBankAccountResponse(Some(state)))
