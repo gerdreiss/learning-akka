@@ -6,6 +6,7 @@ lazy val circeVersion             = "0.14.1"
 lazy val javaDriverVersion        = "4.14.0"
 lazy val logbackClassicVersion    = "1.2.11"
 lazy val scalaTestVersion         = "3.2.11"
+lazy val catsVersion              = "2.7.0"
 
 lazy val root = project
   .in(file("."))
@@ -20,6 +21,6 @@ lazy val root = project
       "com.typesafe.akka" %% "akka-http"              % akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-circe"        % akkaHttpCirceVersion,
       "io.circe"          %% "circe-generic"          % circeVersion,
-      "org.typelevel"     %% "cats-core"              % "2.7.0"
+      "org.typelevel"     %% "cats-core"              % catsVersion
     )
   )
