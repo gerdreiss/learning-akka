@@ -15,26 +15,27 @@ lazy val root = project
     scalaVersion := "2.13.8",
     libraryDependencies ++= Seq(
       // akka
-      "com.typesafe.akka" %% "akka-actor-typed"           % akkaVersion,
-      "com.typesafe.akka" %% "akka-coordination"          % akkaVersion,
-      "com.typesafe.akka" %% "akka-cluster"               % akkaVersion,
-      "com.typesafe.akka" %% "akka-cluster-tools"         % akkaVersion,
-      "com.typesafe.akka" %% "akka-stream"                % akkaVersion,
-      "com.typesafe.akka" %% "akka-persistence-typed"     % akkaVersion,
-      "com.typesafe.akka" %% "akka-persistence-cassandra" % akkaPersistenceCassandra,
-      "com.typesafe.akka" %% "akka-http"                  % akkaHttpVersion,
-      "de.heikoseeberger" %% "akka-http-circe"            % akkaHttpCirceVersion,
-      // circe
-      "io.circe" %% "circe-core"    % circeVersion,
+      "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
+      // "com.typesafe.akka" %% "akka-coordination"          % akkaVersion,
+      // "com.typesafe.akka" %% "akka-cluster"               % akkaVersion,
+      // "com.typesafe.akka" %% "akka-cluster-tools"         % akkaVersion,
+      // "com.typesafe.akka" %% "akka-stream"                % akkaVersion,
+      "com.typesafe.akka" %% "akka-persistence-typed" % akkaVersion,
+      // "com.typesafe.akka" %% "akka-persistence-cassandra" % akkaPersistenceCassandra,
+      "com.typesafe.akka" %% "akka-http"       % akkaHttpVersion,
+      "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceVersion,
+      // // circe
+      // "io.circe" %% "circe-core"    % circeVersion,
       "io.circe" %% "circe-generic" % circeVersion,
-      "io.circe" %% "circe-parser"  % circeVersion,
-      // misc
-      "ch.qos.logback" % "logback-classic" % logbackClassicVersion,
-      "com.datastax.oss" % "java-driver-core" % javaDriverVersion, // See https://github.com/akka/alpakka/issues/2556
-      "com.esri.geometry" % "esri-geometry-api" % "2.2.4",
-      // test
-      "com.typesafe.akka" %% "akka-http-testkit"        % akkaHttpVersion  % Test,
-      "com.typesafe.akka" %% "akka-actor-testkit-typed" % akkaVersion      % Test,
-      "org.scalatest"     %% "scalatest"                % scalaTestVersion % Test
+      // "io.circe" %% "circe-parser"  % circeVersion,
+      // // misc
+      // "ch.qos.logback" % "logback-classic" % logbackClassicVersion,
+      // "com.datastax.oss" % "java-driver-core" % javaDriverVersion, // See https://github.com/akka/alpakka/issues/2556
+      // "com.esri.geometry" % "esri-geometry-api" % "2.2.4",
+      "org.typelevel" %% "cats-core" % "2.7.0"
+      // // test
+      // "com.typesafe.akka" %% "akka-http-testkit"        % akkaHttpVersion  % Test,
+      // "com.typesafe.akka" %% "akka-actor-testkit-typed" % akkaVersion      % Test,
+      // "org.scalatest"     %% "scalatest"                % scalaTestVersion % Test
     )
   )

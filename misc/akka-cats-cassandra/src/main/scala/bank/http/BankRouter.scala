@@ -8,20 +8,53 @@ import akka.http.scaladsl.server.Directives._
 import akka.util.Timeout
 import bank.actors.Command
 import bank.actors.Response
+import cats.implicits._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.generic.auto._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
+import Validation._
+import akka.http.scaladsl.server.Route
+import cats.data.Validated.Invalid
+import cats.data.Validated.Valid
+
 case class BankAccountCreateRequest(user: String, currency: String, initialBalance: Double) {
   def toCommand(replyTo: ActorRef[Response]): Command =
     Command.CreateBankAccount(user, currency, initialBalance, replyTo)
 }
 
+object BankAccountCreateRequest {
+  implicit val validator: Validator[BankAccountCreateRequest] =
+    new Validator[BankAccountCreateRequest] {
+      override def validate(
+          request: BankAccountCreateRequest
+      ): ValidationResult[BankAccountCreateRequest] = {
+        val validUser     = validateRequired(request.user, "user")
+        val validCurrency = validateRequired(request.currency, "currency")
+        val validBalance  = validateMin(request.initialBalance, 0.0, "initialBalance")
+        (validUser, validCurrency, validBalance).mapN(BankAccountCreateRequest.apply)
+      }
+    }
+}
+
 case class BankAccountUpdateRequest(currency: String, amount: Double) {
   def toCommand(id: String, replyTo: ActorRef[Response]): Command =
     Command.UpdateBalance(id, currency, amount, replyTo)
+}
+
+object BankAccountUpdateRequest {
+  implicit val validator: Validator[BankAccountUpdateRequest] =
+    new Validator[BankAccountUpdateRequest] {
+      override def validate(
+          value: BankAccountUpdateRequest
+      ): ValidationResult[BankAccountUpdateRequest] = {
+        val validCurrency = validateRequired(value.currency, "currency")
+        val validAmount   = validateMin(value.amount, 0.01, "amount")
+        (validCurrency, validAmount).mapN(BankAccountUpdateRequest.apply)
+      }
+    }
 }
 
 case class FailureResponse(message: String)
@@ -38,6 +71,12 @@ class BankRouter(bank: ActorRef[Command])(implicit system: akka.actor.typed.Acto
 
   def updateBankAccount(id: String, request: BankAccountUpdateRequest): Future[Response] =
     bank.ask(replyTo => request.toCommand(id, replyTo))
+
+  def validateRequest[R: Validator](request: R)(routeIfValid: Route): Route =
+    validateEntity(request) match {
+      case Valid(_)   => routeIfValid
+      case Invalid(e) => complete(StatusCodes.BadRequest, FailureResponse(e.toList.mkString(", ")))
+    }
 
   /**
     * POST /banks
@@ -69,17 +108,20 @@ class BankRouter(bank: ActorRef[Command])(implicit system: akka.actor.typed.Acto
         post {
           // parse the payload
           entity(as[BankAccountCreateRequest]) { request =>
-            // convert the request into a command
-            // send the command to the bank actor
-            // expect a reply
-            // send back an HTTP response
-            onSuccess(createBankAccount(request)) {
-              case Response.BankAccountCreatedResponse(id) =>
-                respondWithHeader(Location(s"/banks/$id")) {
-                  complete(StatusCodes.Created)
-                }
-              case _ =>
-                complete(StatusCodes.InternalServerError)
+            // validation
+            validateRequest(request) {
+              // convert the request into a command
+              // send the command to the bank actor
+              // expect a reply
+              // send back an HTTP response
+              onSuccess(createBankAccount(request)) {
+                case Response.BankAccountCreatedResponse(id) =>
+                  respondWithHeader(Location(s"/banks/$id")) {
+                    complete(StatusCodes.Created)
+                  }
+                case _ =>
+                  complete(StatusCodes.InternalServerError)
+              }
             }
           }
         } ~
@@ -103,22 +145,23 @@ class BankRouter(bank: ActorRef[Command])(implicit system: akka.actor.typed.Acto
               put {
                 // parse the payload
                 entity(as[BankAccountUpdateRequest]) { request =>
-                  // convert the request into a command
-                  // send the command to the bank actor
-                  // expect a reply
-                  // send back an HTTP response
-
-                  // TODO validate the request
-                  onSuccess(updateBankAccount(id, request)) {
-                    case Response.BankAccountBalanceUpdatedResponse(Some(account)) =>
-                      complete(account)
-                    case Response.BankAccountBalanceUpdatedResponse(None) =>
-                      complete(
-                        StatusCodes.NotFound,
-                        FailureResponse(s"Bank account with ID $id not found")
-                      )
-                    case _ =>
-                      complete(StatusCodes.InternalServerError)
+                  // validation
+                  validateRequest(request) {
+                    // convert the request into a command
+                    // send the command to the bank actor
+                    // expect a reply
+                    // send back an HTTP response
+                    onSuccess(updateBankAccount(id, request)) {
+                      case Response.BankAccountBalanceUpdatedResponse(Some(account)) =>
+                        complete(account)
+                      case Response.BankAccountBalanceUpdatedResponse(None) =>
+                        complete(
+                          StatusCodes.NotFound,
+                          FailureResponse(s"Bank account with ID $id not found")
+                        )
+                      case _ =>
+                        complete(StatusCodes.InternalServerError)
+                    }
                   }
                 }
               }
